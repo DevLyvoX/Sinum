@@ -33,15 +33,19 @@
     NSMutableURLRequest* modifiedRequest = [[self request] mutableCopy];
 
     NSString* originalPath = [modifiedRequest.URL path];
-    NSString* originalQuery = [modifiedRequest.URL query];
-
     NSString* newBaseURLString = API_URL;
-    NSURLComponents* components = [NSURLComponents componentsWithString:newBaseURLString];
 
+    NSURLComponents* components = [NSURLComponents componentsWithString:newBaseURLString];
     components.path = originalPath;
-    if (originalQuery)
-    {
-        components.query = originalQuery;
+
+    NSURLComponents *originalComponents = [NSURLComponents componentsWithURL:modifiedRequest.URL resolvingAgainstBaseURL:NO];
+    if (originalComponents.queryItems.count > 0) {
+        NSMutableArray<NSURLQueryItem *> *cleanItems = [NSMutableArray array];
+        for (NSURLQueryItem *item in originalComponents.queryItems) {
+            NSString *decodedValue = item.value ? [item.value stringByRemovingPercentEncoding] : nil;
+            [cleanItems addObject:[NSURLQueryItem queryItemWithName:item.name value:decodedValue]];
+        }
+        components.queryItems = cleanItems;
     }
 
     [modifiedRequest setURL:components.URL];
